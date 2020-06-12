@@ -26,7 +26,7 @@ namespace BeamDefence
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var sendMouseRepeater = new Repeater(SendMouseLocations, 20);
+            var sendMouseRepeater = new Repeater(SendMouseLocations, 200);
             Task.Run(sendMouseRepeater.Start);
 
             var progressWaveRepeater = new Repeater(ProgressWave, 1000);
@@ -37,12 +37,15 @@ namespace BeamDefence
 
         private async Task SendMouseLocations()
         {
-            await gameHub.Clients.All.SendAsync("updateMousePositions", gameStateManager.players.Select(p => p.Mouse));
+            if (NumPlayers > 0)
+            {
+                await gameHub.Clients.All.SendAsync("updateMousePositions", gameStateManager.players.Select(p => p.Mouse));
+            }
         }
 
         private async Task ProgressWave()
         {
-            if (!gameStateManager.Live) return;
+            if (NumPlayers <= 0 || !gameStateManager.Live) return;
 
             secondsInWave++;
 

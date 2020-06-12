@@ -34,7 +34,7 @@ namespace BeamDefence
             Type = type;
 
             Speed = speed;
-            Health = health * numPlayers;
+            Health = (int)Math.Floor(health * Math.Sqrt(numPlayers));
             Radius = radius;
             Damage = damage;
             Score = score;

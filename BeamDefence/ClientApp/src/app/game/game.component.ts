@@ -16,6 +16,7 @@ import { environment } from '../../environments/environment.prod';
   styleUrls: ['./game.component.css']
 })
 export class GameComponent implements OnInit {
+  static frameCount = 0;
   connection: signalR.HubConnection;
   live: boolean = false;
   id: number = -1;
@@ -65,7 +66,11 @@ export class GameComponent implements OnInit {
       };
       
       sketch.draw = () => {
-        this.connection.invoke("SendMouse", sketch.mouseX, sketch.mouseY);
+        GameComponent.frameCount ++;
+
+        if (GameComponent.frameCount % 12 == 0) {
+          this.connection.invoke("SendMouse", sketch.mouseX, sketch.mouseY);
+        }
 
         sketch.background(10);
 

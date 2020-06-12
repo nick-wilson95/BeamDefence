@@ -5,7 +5,7 @@ export class Sketch {
     var mouseDistance = Vectors.distance(originX, originY, pointX, pointY);
   
     if (mouseDistance == 0) {
-      sketch.line(originX, originY, originX + length, 0);
+      sketch.line(originX, originY, originX + length, originY);
       return;
     }
   

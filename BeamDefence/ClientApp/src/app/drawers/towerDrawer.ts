@@ -10,8 +10,11 @@ export class TowerDrawer{
     towerIndex: number;
     numTowers: number;
     isUs: boolean;
+    position: {x: number, y: number};
+    colour: any;
     mouseX: number;
     mouseY: number;
+    lastPosition: Map<number, {x: number, y: number}> = new Map<number, {x: number, y: number}>();
 
     constructor(sketch: any, player: IPlayer, towerIndex: number, numTowers: number, isUs: boolean) {
         this.sketch = sketch;
@@ -19,52 +22,55 @@ export class TowerDrawer{
         this.towerIndex = towerIndex;
         this.numTowers = numTowers;
         this.isUs = isUs;
+
+        this.position = this.getTowerPosition(this.towerIndex, this.numTowers);
+        this.colour = this.getTowerColour(this.towerIndex, this.numTowers);
+
         this.mouseX = this.isUs ? this.sketch.mouseX : this.player.mouse.x;
         this.mouseY = this.isUs ? this.sketch.mouseY : this.player.mouse.y;
     }
     
     draw(enemies: IEnemy[], onEnemyHit: (colour: any, enemy: IEnemy, position: {x: number, y: number}) => void) {
-        var position = this.getTowerPosition(this.towerIndex, this.numTowers);
-
-        var colour = this.getTowerColour(this.towerIndex, this.numTowers);
-
         this.sketch.noStroke();
       
         var towerBaseColour = this.sketch.color(50, 50, 50);
         this.sketch.fill(towerBaseColour);
-        this.sketch.circle(position.x, position.y, 40);
+        this.sketch.circle(this.position.x, this.position.y, 40);
         
         var towerColour = this.sketch.color(100, 100, 100);
         this.sketch.fill(towerColour);
-        this.sketch.circle(position.x, position.y, 30);
+        this.sketch.circle(this.position.x, this.position.y, 30);
       
-        this.sketch.stroke(colour);  
+        this.sketch.stroke(this.colour);  
       
         var strokeWeight = 8
         this.sketch.strokeWeight(strokeWeight);
 
-        Sketch.lineThroughPoint(this.sketch, position.x, position.y, this.mouseX, this.mouseY, 18);
+        Sketch.lineThroughPoint(this.sketch, this.position.x, this.position.y, this.mouseX, this.mouseY, 18);
         
-        this.drawBeam(enemies, colour, position.x, position.y, onEnemyHit);
+        this.drawBeam(enemies, onEnemyHit);
     }
 
-    private drawBeam(enemies: IEnemy[], colour, xPosition: number, yPosition: number, onEnemyHit: (colour: any, enemy: IEnemy, position: {x: number, y: number}) => void) {
-        colour.setAlpha(150);
-        this.sketch.stroke(colour);
-        colour.setAlpha(255);
+    private drawBeam(enemies: IEnemy[], onEnemyHit: (colour: any, enemy: IEnemy, position: {x: number, y: number}) => void) {
+        this.colour.setAlpha(150);
+        this.sketch.stroke(this.colour);
+        this.colour.setAlpha(255);
         
         var strokeWeight = 2 + Math.floor(Math.random() * 2);
         this.sketch.strokeWeight(strokeWeight);
+
+        var xPosition = this.position.x;
+        var yPosition = this.position.y;
 
         Sketch.lineThroughPoint(this.sketch, xPosition, yPosition, this.mouseX, this.mouseY, this.sketch.width);
         
         enemies.forEach(e => {
           if (Vectors.pointToHalfLineDistance(e.position.x, e.position.y, xPosition, yPosition, this.mouseX, this.mouseY) < e.radius){
                 var enemyDist = Vectors.distance(xPosition, yPosition, e.position.x, e.position.y);
-              var mouseDist = Vectors.distance(xPosition, yPosition, this.mouseX, this.mouseY);
+                var mouseDist = Vectors.distance(xPosition, yPosition, this.mouseX, this.mouseY);
 
                 var hitLocation = {x: xPosition + (this.mouseX-xPosition) * enemyDist/mouseDist, y: yPosition + (this.mouseY-yPosition) * enemyDist/mouseDist};
-                onEnemyHit(colour, e, hitLocation);
+                onEnemyHit(this.colour, e, hitLocation);
             }
         });
     }
