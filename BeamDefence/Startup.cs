@@ -23,7 +23,7 @@ namespace BeamDefence
             services.AddSignalR(options =>
             {
                 options.EnableDetailedErrors = true;
-            });
+            }).AddAzureSignalR("Endpoint=https://beamdefence.service.signalr.net;AccessKey=J6kRu32rzUXuo3XSBN3/mznaJP0hE0BrCW3zNhRy/gc=;Version=1.0;");
 
             services.AddHostedService<GameOrchestrator>();
             services.AddControllersWithViews();

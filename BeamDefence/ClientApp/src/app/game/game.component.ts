@@ -8,6 +8,7 @@ import { TowerDrawer } from '../drawers/towerDrawer';
 import { EnemyDrawer } from '../drawers/enemyDrawer';
 import { BaseDrawer } from '../drawers/baseDrawer';
 import { TextUtils } from '../utils/text';
+import { environment } from '../../environments/environment.prod';
 
 @Component({
   selector: 'app-game-component',
@@ -33,7 +34,7 @@ export class GameComponent implements OnInit {
   async ngOnInit() {
     this.getHighScore();
 
-    this.connection = new signalR.HubConnectionBuilder().withUrl("https://localhost:44367/gameHub")
+    this.connection = new signalR.HubConnectionBuilder().withUrl("/gameHub")
       .withAutomaticReconnect()
       .build();
       
@@ -71,7 +72,8 @@ export class GameComponent implements OnInit {
         BaseDrawer.draw(sketch, this.remainingBaseHealth);
 
         this.players.forEach((player, index) => {
-            var towerDrawer = new TowerDrawer(sketch, player, index, this.players.length);
+          var isUs = player.id == this.id;
+          var towerDrawer = new TowerDrawer(sketch, player, index, this.players.length, isUs);
             towerDrawer.draw(this.enemies, (colour: any, enemy: IEnemy, hitLocation: {x: number, y: number}) => {            
               this.addSpark(colour, hitLocation.x, hitLocation.y);
       

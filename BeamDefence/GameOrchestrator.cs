@@ -48,7 +48,7 @@ namespace BeamDefence
 
             if (gameStateManager.RemainingWaveEnemies <= 0 && gameStateManager.enemies.Count <= 0)
             {
-                StartWave();
+                await StartWave();
                 return;
             }
 
@@ -60,17 +60,17 @@ namespace BeamDefence
             var numToSpawn = Math.Min(randomInt, gameStateManager.RemainingWaveEnemies);
             gameStateManager.RemainingWaveEnemies -= numToSpawn;
 
-            SpawnEnemies(numToSpawn);
+            await SpawnEnemies(numToSpawn);
         }
 
-        private void StartWave()
+        private async Task StartWave()
         {
             secondsInWave = 0;
             gameStateManager.IncrementWave(gameStateManager.CurrentWave * 4 + 10);
-            gameHub.Clients.All.SendAsync("newWave");
+            await gameHub.Clients.All.SendAsync("newWave");
         }
 
-        private void SpawnEnemies(int numToSpawn)
+        private async Task SpawnEnemies(int numToSpawn)
         {
             if (!gameStateManager.Live) return;
 
@@ -113,7 +113,7 @@ namespace BeamDefence
                 newEnemies.Add(newEnemy);
             }
              
-            gameHub.Clients.All.SendAsync("newEnemies", newEnemies);
+            await gameHub.Clients.All.SendAsync("newEnemies", newEnemies);
         }
     }
 }

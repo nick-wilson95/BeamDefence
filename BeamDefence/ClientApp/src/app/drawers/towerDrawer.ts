@@ -9,12 +9,18 @@ export class TowerDrawer{
     player: IPlayer;
     towerIndex: number;
     numTowers: number;
+    isUs: boolean;
+    mouseX: number;
+    mouseY: number;
 
-    constructor(sketch: any, player: IPlayer, towerIndex: number, numTowers: number) {
+    constructor(sketch: any, player: IPlayer, towerIndex: number, numTowers: number, isUs: boolean) {
         this.sketch = sketch;
         this.player = player;
         this.towerIndex = towerIndex;
         this.numTowers = numTowers;
+        this.isUs = isUs;
+        this.mouseX = this.isUs ? this.sketch.mouseX : this.player.mouse.x;
+        this.mouseY = this.isUs ? this.sketch.mouseY : this.player.mouse.y;
     }
     
     draw(enemies: IEnemy[], onEnemyHit: (colour: any, enemy: IEnemy, position: {x: number, y: number}) => void) {
@@ -36,8 +42,8 @@ export class TowerDrawer{
       
         var strokeWeight = 8
         this.sketch.strokeWeight(strokeWeight);
-      
-        Sketch.lineThroughPoint(this.sketch, position.x, position.y, this.player.mouse.x, this.player.mouse.y, 18);
+
+        Sketch.lineThroughPoint(this.sketch, position.x, position.y, this.mouseX, this.mouseY, 18);
         
         this.drawBeam(enemies, colour, position.x, position.y, onEnemyHit);
     }
@@ -49,18 +55,15 @@ export class TowerDrawer{
         
         var strokeWeight = 2 + Math.floor(Math.random() * 2);
         this.sketch.strokeWeight(strokeWeight);
-        
-        var mouseX = this.player.mouse.x;
-        var mouseY = this.player.mouse.y;
 
-        Sketch.lineThroughPoint(this.sketch, xPosition, yPosition, mouseX, mouseY, this.sketch.width);
+        Sketch.lineThroughPoint(this.sketch, xPosition, yPosition, this.mouseX, this.mouseY, this.sketch.width);
         
         enemies.forEach(e => {
-            if (Vectors.pointToHalfLineDistance(e.position.x, e.position.y, xPosition, yPosition, mouseX, mouseY) < e.radius){
+          if (Vectors.pointToHalfLineDistance(e.position.x, e.position.y, xPosition, yPosition, this.mouseX, this.mouseY) < e.radius){
                 var enemyDist = Vectors.distance(xPosition, yPosition, e.position.x, e.position.y);
-                var mouseDist = Vectors.distance(xPosition, yPosition, mouseX, mouseY);
+              var mouseDist = Vectors.distance(xPosition, yPosition, this.mouseX, this.mouseY);
 
-                var hitLocation = {x: xPosition + (mouseX-xPosition) * enemyDist/mouseDist, y: yPosition + (mouseY-yPosition) * enemyDist/mouseDist};
+                var hitLocation = {x: xPosition + (this.mouseX-xPosition) * enemyDist/mouseDist, y: yPosition + (this.mouseY-yPosition) * enemyDist/mouseDist};
                 onEnemyHit(colour, e, hitLocation);
             }
         });

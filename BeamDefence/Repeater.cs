@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BeamDefence
@@ -19,6 +20,8 @@ namespace BeamDefence
 
         public async Task Start()
         {
+            Thread.Sleep(5000);
+
             stopwatch.Start();
 
             while (true)
