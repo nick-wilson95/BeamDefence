@@ -38,7 +38,7 @@ export class GameComponent implements OnInit {
     this.connection = new signalR.HubConnectionBuilder().withUrl("/gameHub")
       .withAutomaticReconnect()
       .build();
-      
+
     this.connection.on("receivePlayers", this.receivePlayers);
     this.connection.on("receiveId", this.receiveId);
     this.connection.on("receiveGameState", this.receiveGameState);
@@ -53,7 +53,7 @@ export class GameComponent implements OnInit {
     this.connection.on("enemyDead", this.enemyDead);
     this.connection.on("enemyArrived", this.enemyArrived);
     this.connection.on("gameOver", this.gameOver);
-    
+
     await this.connection.start();
     await this.connection.invoke("GetPlayers");
     await this.connection.invoke("GetGameState");
@@ -64,31 +64,28 @@ export class GameComponent implements OnInit {
         canvas2.parent('sketch-holder');
         sketch.background(10);
       };
-      
-      sketch.draw = () => {
-        GameComponent.frameCount ++;
 
-        if (GameComponent.frameCount % 12 == 0) {
-          this.connection.invoke("SendMouse", sketch.mouseX, sketch.mouseY);
+      sketch.draw = () => {
+        GameComponent.frameCount++;
+        this.connection.invoke("SendMouse", sketch.mouseX, sketch.mouseY, sketch.mouseIsPressed);
+
+        if (this.live) {
+          this.remainingBaseHealth -= this.players.filter(p => p.mousePressed).length / (this.players.length * 6);
         }
 
         sketch.background(10);
 
-        BaseDrawer.draw(sketch, this.remainingBaseHealth);
+        BaseDrawer.drawWalls(sketch);
+        
+        var towerDrawers = this.players.map((player, index) =>
+          new TowerDrawer(sketch, player, index, this.players.length, player.id == this.id));
 
-        this.players.forEach((player, index) => {
-          var isUs = player.id == this.id;
-          var towerDrawer = new TowerDrawer(sketch, player, index, this.players.length, isUs);
-            towerDrawer.draw(this.enemies, (colour: any, enemy: IEnemy, hitLocation: {x: number, y: number}) => {            
-              this.addSpark(colour, hitLocation.x, hitLocation.y);
-      
-              if (player.id == this.id) {
-                this.connection.invoke("DamageEnemy", enemy.id);
-              }
-            });
-        });
+        towerDrawers.forEach(td => td.drawTower());
+        towerDrawers.forEach(td => td.drawBeam(this.enemies, this.enemyHitCallback));
+        
+        BaseDrawer.drawNexus(sketch, this.remainingBaseHealth);
 
-        if (this.live){
+        if (this.live) {
           this.enemies.forEach(e => {
             var enemyDrawer = new EnemyDrawer(sketch, e);
             var arrived = enemyDrawer.draw();
@@ -99,15 +96,15 @@ export class GameComponent implements OnInit {
           this.deadEnemies.forEach(e => {
             var enemyDrawer = new EnemyDrawer(sketch, e);
             enemyDrawer.drawDead();
-          });          
-    
-          this.addSpark(sketch.color(255, 255, 255), sketch.width/2, sketch.height/2);
+          });
+
+          this.addSpark(sketch.color(255, 255, 255), sketch.width / 2, sketch.height / 2);
         }
-  
+
         this.sparks = this.sparks.filter(s => s.draw(sketch));
 
         this.drawText(sketch);
-      };      
+      };
 
       sketch.keyPressed = () => {
         if (sketch.key == "s" && !this.live) {
@@ -120,7 +117,7 @@ export class GameComponent implements OnInit {
   }
 
   newPlayer = (newPlayer: IPlayer) => this.players.push(newPlayer);
-  
+
   receiveId = (ourId: number) => this.id = ourId;
 
   receivePlayers = (players: IPlayer[]) => this.players = players;
@@ -133,21 +130,21 @@ export class GameComponent implements OnInit {
   receiveEnemies = (enemies: IEnemy[]) => this.enemies = enemies;
 
   playerLeft = (id: number) => this.players = this.players.filter(p => p.id != id);
-  
+
   gameStarted = () => {
     this.live = true;
     this.remainingBaseHealth = 100;
     this.score = 0;
   }
-  
+
   newWave = () => {
     this.waveNumber += 1;
     this.waveStarting = true;
     setTimeout(() => this.waveStarting = false, 2000);
   }
-  
+
   sendEnemiesForConnection = (connectionId: string) => {
-    var positions = this.enemies.map(e => ({x: e.position.x, y: e.position.y, id: e.id}));
+    var positions = this.enemies.map(e => ({ x: e.position.x, y: e.position.y, id: e.id }));
     this.connection.invoke("SendEnemiesForConnection", positions, connectionId);
   }
 
@@ -158,18 +155,21 @@ export class GameComponent implements OnInit {
     if (enemy != undefined) this.score += enemy.score;
     this.enemies = this.enemies.filter(e => e.id != id);
   }
-  
+
   enemyArrived = (id: number) => {
     var enemy = this.enemies.find(e => e.id == id);
     if (enemy != undefined) this.remainingBaseHealth -= enemy.damage;
     this.enemies = this.enemies.filter(e => e.id != id);
   }
 
-  updateMousePositions = (mousePositions: {x: number, y: number}[]) => {
-    if (mousePositions.length != this.players.length) return;
+  updateMousePositions = (mousePositions: { x: number, y: number }[], micePressed: boolean[]) => {
+    if (mousePositions.length < this.players.length) return;
     this.players.forEach((player, i) => player.mouse = mousePositions[i]);
+
+    if (micePressed.length < this.players.length) return;
+    this.players.forEach((player, i) => player.mousePressed = micePressed[i]);
   }
-  
+
   gameOver = () => {
     this.updateHighScore(this.score);
     this.live = false;
@@ -194,11 +194,20 @@ export class GameComponent implements OnInit {
       this.highScore = parseInt(highScore);
     }
   }
-    
+
   addSpark(colour, x: number, y: number) {
     this.sparks.push(new Spark(colour, x, y));
   }
-    
+
+  enemyHitCallback = (colour: any, mousePressed: boolean, enemy: IEnemy, isUs: boolean, hitLocation: { x: number, y: number }) => {
+    this.addSpark(colour, hitLocation.x, hitLocation.y);
+
+    if (isUs) {
+      var damage = mousePressed ? 2 : 1;
+      this.connection.invoke("DamageEnemy", enemy.id, damage);
+    }
+  };
+
   drawText(sketch) {
     TextUtils.bottomRightText(sketch, "Score: " + this.score);
 

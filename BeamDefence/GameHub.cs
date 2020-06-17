@@ -72,19 +72,19 @@ namespace BeamDefence
             await Clients.Caller.SendAsync("receiveGameState", gameStateManager.Live);
         }
 
-        public void SendMouse(int mouseX, int mouseY)
+        public void SendMouse(int mouseX, int mouseY, bool mousePressed)
         {
             if (gameStateManager.TryGetPlayer(Context.ConnectionId, out var player))
             {
-                player.SetMouse(mouseX, mouseY);
+                player.SetMouse(mouseX, mouseY, mousePressed);
             }
         }
 
-        public async Task DamageEnemy(int enemyId)
+        public async Task DamageEnemy(int enemyId, int amount)
         {
             if (gameStateManager.TryGetEnemy(enemyId, out Enemy enemy))
             {
-                enemy.ReceiveDamage(1);
+                enemy.ReceiveDamage(amount);
 
                 if (enemy.Dead)
                 {
@@ -99,13 +99,6 @@ namespace BeamDefence
             if (gameStateManager.TryGetEnemy(enemyId, out Enemy enemy))
             {
                 gameStateManager.DamageNexus(enemy.Damage);
-
-                if (gameStateManager.NexusDead)
-                {
-                    gameStateManager.Reset();
-                    await Clients.All.SendAsync("gameOver");
-                    return;
-                }
 
                 gameStateManager.enemies.Remove(enemy);
                 await Clients.All.SendAsync("enemyArrived", enemy.Id);

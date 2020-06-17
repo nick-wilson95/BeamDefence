@@ -17,11 +17,13 @@
         public string ConnectionId { get; }
         public string Name { get; }
         public Position Mouse { get; } = new Position();
+        public bool MousePressed { get; set; } = false;
 
-        public void SetMouse(int x, int y)
+        public void SetMouse(int x, int y, bool mousePressed)
         {
             Mouse.X = x;
             Mouse.Y = y;
+            MousePressed = mousePressed;
         }
     }
 }

@@ -26,7 +26,13 @@ namespace BeamDefence
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var sendMouseRepeater = new Repeater(SendMouseLocations, 200);
+            var gameOverRepeater = new Repeater(CheckGameOver, 20);
+            Task.Run(gameOverRepeater.Start);
+
+            var superChargeDamage = new Repeater(SuperChargeDamage, 100);
+            Task.Run(superChargeDamage.Start);
+
+            var sendMouseRepeater = new Repeater(SendMouseLocations, 100);
             Task.Run(sendMouseRepeater.Start);
 
             var progressWaveRepeater = new Repeater(ProgressWave, 1000);
@@ -35,11 +41,33 @@ namespace BeamDefence
             return Task.CompletedTask;
         }
 
+        private async Task CheckGameOver()
+        {
+            if (gameStateManager.NexusDead)
+            {
+                gameStateManager.Reset();
+                await gameHub.Clients.All.SendAsync("gameOver");
+            }
+        }
+
+        private async Task SuperChargeDamage()
+        {
+            if (NumPlayers > 0 && gameStateManager.Live)
+            {
+                var numSuperCharging = gameStateManager.players.Count(p => p.MousePressed);
+                gameStateManager.DamageNexus((double)numSuperCharging / NumPlayers);
+            }
+        }
+
         private async Task SendMouseLocations()
         {
             if (NumPlayers > 0)
             {
-                await gameHub.Clients.All.SendAsync("updateMousePositions", gameStateManager.players.Select(p => p.Mouse));
+                await gameHub.Clients.All.SendAsync(
+                    "updateMousePositions",
+                    gameStateManager.players.Select(p => p.Mouse),
+                    gameStateManager.players.Select(p => p.MousePressed)
+                );
             }
         }
 

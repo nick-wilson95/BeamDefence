@@ -25,7 +25,9 @@ export class TowerDrawer{
         this.isUs = isUs;
 
         this.position = this.getTowerPosition(towerIndex, numTowers);
-        this.colour = this.getTowerColour(towerIndex, numTowers);
+
+        var mousePressed = isUs ? sketch.mouseIsPressed : player.mousePressed;
+        this.colour = this.getTowerColour(towerIndex, numTowers, mousePressed);
 
         if (this.isUs) {
             this.targetX = sketch.mouseX;
@@ -45,7 +47,7 @@ export class TowerDrawer{
         TowerDrawer.lastPositions.set(player.id, {x: this.targetX, y: this.targetY});
     }
     
-    draw(enemies: IEnemy[], onEnemyHit: (colour: any, enemy: IEnemy, position: {x: number, y: number}) => void) {
+    drawTower() {
         this.sketch.noStroke();
       
         var towerBaseColour = this.sketch.color(50, 50, 50);
@@ -62,22 +64,26 @@ export class TowerDrawer{
         this.sketch.strokeWeight(strokeWeight);
 
         Sketch.lineThroughPoint(this.sketch, this.position.x, this.position.y, this.targetX, this.targetY, 18);
-        
-        this.drawBeam(enemies, onEnemyHit);
     }
 
-    private drawBeam(enemies: IEnemy[], onEnemyHit: (colour: any, enemy: IEnemy, position: {x: number, y: number}) => void) {
+    drawBeam(enemies: IEnemy[], onEnemyHit: (colour: any, mousePressed: boolean, enemy: IEnemy, isUs: boolean, position: {x: number, y: number}) => void) {
         this.colour.setAlpha(150);
         this.sketch.stroke(this.colour);
         this.colour.setAlpha(255);
         
         var strokeWeight = 2 + Math.floor(Math.random() * 2);
+        if (this.player.mousePressed) strokeWeight *= 3;
         this.sketch.strokeWeight(strokeWeight);
 
         var xPosition = this.position.x;
         var yPosition = this.position.y;
 
         Sketch.lineThroughPoint(this.sketch, xPosition, yPosition, this.targetX, this.targetY, this.sketch.width);
+
+        if (this.player.mousePressed) {
+            this.sketch.stroke(255, 255, 255, 80);
+            Sketch.lineThroughPoint(this.sketch, 720, 405, this.position.x, this.position.y, TowerDrawer.towerDistance);
+        }
         
         enemies.forEach(e => {
           if (Vectors.pointToHalfLineDistance(e.position.x, e.position.y, xPosition, yPosition, this.targetX, this.targetY) < e.radius){
@@ -85,7 +91,7 @@ export class TowerDrawer{
                 var mouseDist = Vectors.distance(xPosition, yPosition, this.targetX, this.targetY);
 
                 var hitLocation = {x: xPosition + (this.targetX-xPosition) * enemyDist/mouseDist, y: yPosition + (this.targetY-yPosition) * enemyDist/mouseDist};
-                onEnemyHit(this.colour, e, hitLocation);
+                onEnemyHit(this.colour, this.sketch.mouseIsPressed, e, this.isUs, hitLocation);
             }
         });
     }
@@ -98,7 +104,7 @@ export class TowerDrawer{
         return {x: xPosition, y: yPosition};
     }
     
-    private getTowerColour(index: number, numPlayers: number) {
+    private getTowerColour(index: number, numPlayers: number, mousePressed: boolean) {
         var proportion = index / numPlayers;
         var subProportion = proportion * 6 % 1;
         

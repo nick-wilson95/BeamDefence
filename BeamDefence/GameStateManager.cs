@@ -18,8 +18,8 @@ namespace BeamDefence
         public bool Live { get; private set; } = false;
         public int CurrentWave { get; private set; } = 0;
         public int RemainingWaveEnemies { get; set; } = 0;
-        public int NexusHealth { get; private set; }
-        public bool NexusDead => NexusHealth <= 0;
+        public double NexusHealth { get; private set; }
+        public bool NexusDead { get; private set; } = false;
 
         public List<string> ConnectionsAwaitingEnemies { get; set; } = new List<string>();
 
@@ -38,6 +38,8 @@ namespace BeamDefence
             CurrentWave = 0;
             RemainingWaveEnemies = 0;
             ConnectionsAwaitingEnemies.Clear();
+
+            NexusDead = false;
         }
 
         public bool TryGetPlayer(string connectionId, out Player player)
@@ -54,9 +56,11 @@ namespace BeamDefence
             return enemy != default;
         }
 
-        public void DamageNexus(int damage)
+        public void DamageNexus(double damage)
         {
             NexusHealth -= damage;
+
+            if (NexusHealth <= 0) NexusDead = true;
         }
 
         public void IncrementWave(int nextWaveNumEnemies)
