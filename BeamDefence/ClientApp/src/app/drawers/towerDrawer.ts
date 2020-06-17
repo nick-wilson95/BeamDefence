@@ -5,6 +5,8 @@ import { Vectors } from "../utils/vectors";
 
 export class TowerDrawer{
     static readonly towerDistance = 50;
+    static lastPositions: Map<number, {x: number, y: number}> = new Map<number, {x: number, y: number}>();
+
     sketch: any;
     player: IPlayer;
     towerIndex: number;
@@ -12,9 +14,8 @@ export class TowerDrawer{
     isUs: boolean;
     position: {x: number, y: number};
     colour: any;
-    mouseX: number;
-    mouseY: number;
-    lastPosition: Map<number, {x: number, y: number}> = new Map<number, {x: number, y: number}>();
+    targetX: number;
+    targetY: number;
 
     constructor(sketch: any, player: IPlayer, towerIndex: number, numTowers: number, isUs: boolean) {
         this.sketch = sketch;
@@ -23,11 +24,25 @@ export class TowerDrawer{
         this.numTowers = numTowers;
         this.isUs = isUs;
 
-        this.position = this.getTowerPosition(this.towerIndex, this.numTowers);
-        this.colour = this.getTowerColour(this.towerIndex, this.numTowers);
+        this.position = this.getTowerPosition(towerIndex, numTowers);
+        this.colour = this.getTowerColour(towerIndex, numTowers);
 
-        this.mouseX = this.isUs ? this.sketch.mouseX : this.player.mouse.x;
-        this.mouseY = this.isUs ? this.sketch.mouseY : this.player.mouse.y;
+        if (this.isUs) {
+            this.targetX = sketch.mouseX;
+            this.targetY = sketch.mouseY;
+            return;
+        }
+
+        this.targetX = player.mouse.x;
+        this.targetY = player.mouse.y;
+
+        if (TowerDrawer.lastPositions.has(player.id)) {
+            var lastPosition = TowerDrawer.lastPositions.get(player.id);
+            this.targetX = lastPosition.x + (player.mouse.x - lastPosition.x) * 0.2;
+            this.targetY = lastPosition.y + (player.mouse.y - lastPosition.y) * 0.2;
+        }
+
+        TowerDrawer.lastPositions.set(player.id, {x: this.targetX, y: this.targetY});
     }
     
     draw(enemies: IEnemy[], onEnemyHit: (colour: any, enemy: IEnemy, position: {x: number, y: number}) => void) {
@@ -46,7 +61,7 @@ export class TowerDrawer{
         var strokeWeight = 8
         this.sketch.strokeWeight(strokeWeight);
 
-        Sketch.lineThroughPoint(this.sketch, this.position.x, this.position.y, this.mouseX, this.mouseY, 18);
+        Sketch.lineThroughPoint(this.sketch, this.position.x, this.position.y, this.targetX, this.targetY, 18);
         
         this.drawBeam(enemies, onEnemyHit);
     }
@@ -62,14 +77,14 @@ export class TowerDrawer{
         var xPosition = this.position.x;
         var yPosition = this.position.y;
 
-        Sketch.lineThroughPoint(this.sketch, xPosition, yPosition, this.mouseX, this.mouseY, this.sketch.width);
+        Sketch.lineThroughPoint(this.sketch, xPosition, yPosition, this.targetX, this.targetY, this.sketch.width);
         
         enemies.forEach(e => {
-          if (Vectors.pointToHalfLineDistance(e.position.x, e.position.y, xPosition, yPosition, this.mouseX, this.mouseY) < e.radius){
+          if (Vectors.pointToHalfLineDistance(e.position.x, e.position.y, xPosition, yPosition, this.targetX, this.targetY) < e.radius){
                 var enemyDist = Vectors.distance(xPosition, yPosition, e.position.x, e.position.y);
-                var mouseDist = Vectors.distance(xPosition, yPosition, this.mouseX, this.mouseY);
+                var mouseDist = Vectors.distance(xPosition, yPosition, this.targetX, this.targetY);
 
-                var hitLocation = {x: xPosition + (this.mouseX-xPosition) * enemyDist/mouseDist, y: yPosition + (this.mouseY-yPosition) * enemyDist/mouseDist};
+                var hitLocation = {x: xPosition + (this.targetX-xPosition) * enemyDist/mouseDist, y: yPosition + (this.targetY-yPosition) * enemyDist/mouseDist};
                 onEnemyHit(this.colour, e, hitLocation);
             }
         });

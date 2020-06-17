@@ -30,5 +30,11 @@ namespace BeamDefence
             X += (target.X - X) * amount;
             Y += (target.Y - Y) * amount;
         }
+
+        public int RelativeAngle(Position origin)
+        {
+            var angle = (int)Math.Floor(Math.Atan2(X - origin.X, Y - origin.Y) * 180 / Math.PI) + 180;
+            return angle;
+        }
     }
 }
