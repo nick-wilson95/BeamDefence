@@ -17,6 +17,7 @@ export class TowerDrawer{
     targetX: number;
     targetY: number;
     targetingNexus: boolean;
+    mousePressed: boolean;
 
     constructor(sketch: any, player: IPlayer, towerIndex: number, numTowers: number, isUs: boolean) {
         this.sketch = sketch;
@@ -27,8 +28,8 @@ export class TowerDrawer{
 
         this.position = this.getTowerPosition(towerIndex, numTowers);
 
-        var mousePressed = isUs ? sketch.mouseIsPressed : player.mousePressed;
-        this.colour = this.getTowerColour(towerIndex, numTowers, mousePressed);
+        this.mousePressed = isUs ? sketch.mouseIsPressed : player.mousePressed;
+        this.colour = this.getTowerColour(towerIndex, numTowers);
 
         this.targetX = this.isUs ? sketch.mouseX :player.mouse.x;
         this.targetY = this.isUs ? sketch.mouseY :player.mouse.y;
@@ -78,7 +79,7 @@ export class TowerDrawer{
         this.colour.setAlpha(255);
         
         var strokeWeight = 2 + Math.floor(Math.random() * 2);
-        if (this.player.mousePressed) strokeWeight *= 3;
+        if (this.mousePressed) strokeWeight *= 3;
         this.sketch.strokeWeight(strokeWeight);
 
         var xPosition = this.position.x;
@@ -86,7 +87,7 @@ export class TowerDrawer{
 
         Sketch.lineThroughPoint(this.sketch, xPosition, yPosition, this.targetX, this.targetY, this.sketch.width);
 
-        if (this.player.mousePressed) {
+        if (this.mousePressed) {
             this.sketch.stroke(255, 255, 255, 80);
             Sketch.lineThroughPoint(this.sketch, 720, 405, this.position.x, this.position.y, TowerDrawer.towerDistance);
         }
@@ -110,7 +111,7 @@ export class TowerDrawer{
         return {x: xPosition, y: yPosition};
     }
     
-    private getTowerColour(index: number, numPlayers: number, mousePressed: boolean) {
+    private getTowerColour(index: number, numPlayers: number) {
         var proportion = index / numPlayers;
         var subProportion = proportion * 6 % 1;
         
