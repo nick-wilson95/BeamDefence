@@ -56,6 +56,13 @@ namespace BeamDefence
             return enemy != default;
         }
 
+        public void HealNexus(double healing)
+        {
+            NexusHealth += healing;
+
+            if (NexusHealth > 100) NexusHealth = 100;
+        }
+
         public void DamageNexus(double damage)
         {
             NexusHealth -= damage;

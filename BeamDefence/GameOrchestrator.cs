@@ -38,6 +38,9 @@ namespace BeamDefence
             var progressWaveRepeater = new Repeater(ProgressWave, 1000);
             Task.Run(progressWaveRepeater.Start);
 
+            var sendNexusHealth = new Repeater(SendNexusHealth, 1000);
+            Task.Run(sendNexusHealth.Start);
+
             return Task.CompletedTask;
         }
 
@@ -68,6 +71,14 @@ namespace BeamDefence
                     gameStateManager.players.Select(p => p.Mouse),
                     gameStateManager.players.Select(p => p.MousePressed)
                 );
+            }
+        }
+
+        private async Task SendNexusHealth()
+        {
+            if (NumPlayers > 0 && gameStateManager.Live)
+            {
+                await gameHub.Clients.All.SendAsync("updateNexusHealth", gameStateManager.NexusHealth);
             }
         }
 

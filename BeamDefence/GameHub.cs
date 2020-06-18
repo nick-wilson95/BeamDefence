@@ -94,6 +94,11 @@ namespace BeamDefence
             }
         }
 
+        public void HealNexus(double amount)
+        {
+            gameStateManager.HealNexus(amount);
+        }
+
         public async Task EnemyArrived(int enemyId)
         {
             if (gameStateManager.TryGetEnemy(enemyId, out Enemy enemy))

@@ -16,6 +16,7 @@ export class TowerDrawer{
     colour: any;
     targetX: number;
     targetY: number;
+    targetingNexus: boolean;
 
     constructor(sketch: any, player: IPlayer, towerIndex: number, numTowers: number, isUs: boolean) {
         this.sketch = sketch;
@@ -29,22 +30,21 @@ export class TowerDrawer{
         var mousePressed = isUs ? sketch.mouseIsPressed : player.mousePressed;
         this.colour = this.getTowerColour(towerIndex, numTowers, mousePressed);
 
-        if (this.isUs) {
-            this.targetX = sketch.mouseX;
-            this.targetY = sketch.mouseY;
-            return;
+        this.targetX = this.isUs ? sketch.mouseX :player.mouse.x;
+        this.targetY = this.isUs ? sketch.mouseY :player.mouse.y;
+
+        var distanceToNexus = Vectors.pointToHalfLineDistance(720, 405, this.position.x, this.position.y, this.targetX, this.targetY);
+        this.targetingNexus = distanceToNexus < 10;
+
+        if (!this.isUs) {
+            if (TowerDrawer.lastPositions.has(player.id)) {
+                var lastPosition = TowerDrawer.lastPositions.get(player.id);
+                this.targetX = lastPosition.x + (player.mouse.x - lastPosition.x) * 0.2;
+                this.targetY = lastPosition.y + (player.mouse.y - lastPosition.y) * 0.2;
+            }
+    
+            TowerDrawer.lastPositions.set(player.id, {x: this.targetX, y: this.targetY});
         }
-
-        this.targetX = player.mouse.x;
-        this.targetY = player.mouse.y;
-
-        if (TowerDrawer.lastPositions.has(player.id)) {
-            var lastPosition = TowerDrawer.lastPositions.get(player.id);
-            this.targetX = lastPosition.x + (player.mouse.x - lastPosition.x) * 0.2;
-            this.targetY = lastPosition.y + (player.mouse.y - lastPosition.y) * 0.2;
-        }
-
-        TowerDrawer.lastPositions.set(player.id, {x: this.targetX, y: this.targetY});
     }
     
     drawTower() {
@@ -66,7 +66,13 @@ export class TowerDrawer{
         Sketch.lineThroughPoint(this.sketch, this.position.x, this.position.y, this.targetX, this.targetY, 18);
     }
 
-    drawBeam(enemies: IEnemy[], onEnemyHit: (colour: any, mousePressed: boolean, enemy: IEnemy, isUs: boolean, position: {x: number, y: number}) => void) {
+    drawBeam(
+        enemies: IEnemy[],
+        onEnemyHit: (colour: any, mousePressed: boolean, enemy: IEnemy, isUs: boolean, position: {x: number, y: number}) => void,
+        onTowerHeal: (colour: any) => void
+    ) {
+        if (this.targetingNexus) onTowerHeal(this.sketch.color(0, 255, 0));
+
         this.colour.setAlpha(150);
         this.sketch.stroke(this.colour);
         this.colour.setAlpha(255);

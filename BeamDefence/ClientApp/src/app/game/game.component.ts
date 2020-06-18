@@ -47,6 +47,7 @@ export class GameComponent implements OnInit {
     this.connection.on("newPlayer", this.newPlayer);
     this.connection.on("playerLeft", this.playerLeft);
     this.connection.on("gameStarted", this.gameStarted);
+    this.connection.on("updateNexusHealth", this.updateNexusHealth);
     this.connection.on("newWave", this.newWave);
     this.connection.on("sendEnemiesForConnection", this.sendEnemiesForConnection);
     this.connection.on("newEnemies", this.newEnemies);
@@ -81,7 +82,7 @@ export class GameComponent implements OnInit {
           new TowerDrawer(sketch, player, index, this.players.length, player.id == this.id));
 
         towerDrawers.forEach(td => td.drawTower());
-        towerDrawers.forEach(td => td.drawBeam(this.enemies, this.enemyHitCallback));
+        towerDrawers.forEach(td => td.drawBeam(this.enemies, this.enemyHitCallback, this.towerHealCallback));
         
         BaseDrawer.drawNexus(sketch, this.remainingBaseHealth);
 
@@ -188,6 +189,10 @@ export class GameComponent implements OnInit {
     }
   }
 
+  updateNexusHealth(health: number) {
+    this.remainingBaseHealth = health;
+  }
+
   getHighScore() {
     var highScore = localStorage.getItem("highScore");
     if (highScore != null) {
@@ -195,7 +200,7 @@ export class GameComponent implements OnInit {
     }
   }
 
-  addSpark(colour, x: number, y: number) {
+  addSpark(colour: any, x: number, y: number) {
     this.sparks.push(new Spark(colour, x, y));
   }
 
@@ -207,6 +212,19 @@ export class GameComponent implements OnInit {
       this.connection.invoke("DamageEnemy", enemy.id, damage);
     }
   };
+
+  towerHealCallback = (colour: any) => {
+    if (!this.live || this.remainingBaseHealth == 100) return;
+
+    this.addSpark(colour, 720, 405);
+
+    var healing = 0.5/(6 * this.players.length);
+
+    this.remainingBaseHealth += healing;
+    if (this.remainingBaseHealth > 100) this.remainingBaseHealth = 100;
+
+    this.connection.invoke("HealNexus", healing);
+  }
 
   drawText(sketch) {
     TextUtils.bottomRightText(sketch, "Score: " + this.score);

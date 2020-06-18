@@ -30,6 +30,6 @@ export class BaseDrawer {
 
         sketch.noStroke();
         sketch.fill(nexusColour);
-        sketch.circle(sketch.width/2, sketch.height/2, 10 * (2 + cycleProportion));
+        sketch.circle(sketch.width/2, sketch.height/2, healthProportion * 15 * (2 + cycleProportion));
     }
 }
